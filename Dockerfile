@@ -25,6 +25,8 @@ FROM ghcr.io/puppeteer/puppeteer:latest as prod
 WORKDIR /app
 
 COPY --chown=pptruser --from=build /app/dist /app
+COPY --chown=pptruser --from=build /app/node_modules /app/node_modules
+COPY --chown=pptruser --from=build /app/package.json /app/package.json
 
 EXPOSE 3010
 
