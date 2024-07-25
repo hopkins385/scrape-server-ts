@@ -10,6 +10,8 @@ COPY --chown=pptruser . /app
 
 RUN npm install
 
+RUN npm run build
+
 EXPOSE 3010
 
 # run server.ts
