@@ -12,7 +12,9 @@ RUN npm install
 
 RUN npm run build
 
+COPY --chown=pptruser ./dist ./
+
 EXPOSE 3010
 
 # run server.ts
-CMD ["node", "dist/index.js"]
+CMD ["node", "index.js"]
