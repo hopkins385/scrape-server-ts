@@ -7,7 +7,7 @@ ENV LANG en_US.UTF-8
 
 WORKDIR /app
 
-COPY --chown=node:node . .
+COPY --chown=pptruser . .
 
 RUN npm ci
 
@@ -29,8 +29,7 @@ WORKDIR /app
 
 USER pptruser
 
-# USER pptruser
-COPY --chown=pptruser --from=build /dist /app
+COPY --chown=pptruser --from=build /app/dist ./app
 
 EXPOSE 3010
 
