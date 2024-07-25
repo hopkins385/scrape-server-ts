@@ -34,4 +34,4 @@ COPY --chown=pptruser --from=build /app/dist ./app
 EXPOSE 3010
 
 # run server
-CMD ["node", "index.js"]
+CMD ["node", "/dist/index.js"]
