@@ -2,11 +2,10 @@ FROM ghcr.io/puppeteer/puppeteer:latest
 
 ENV LANG en_US.UTF-8
 
-USER pptruser
-
 WORKDIR /app
 
 # USER pptruser
+
 COPY --chown=pptruser . /app
 
 RUN npm install
