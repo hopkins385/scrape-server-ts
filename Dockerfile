@@ -4,7 +4,7 @@ ENV LANG en_US.UTF-8
 
 WORKDIR /app
 
-# USER pptruser
+USER pptruser
 
 COPY --chown=pptruser . /app
 
