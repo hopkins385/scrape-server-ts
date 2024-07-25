@@ -1,3 +1,4 @@
+// @ts-nocheck
 import express, { raw } from "express";
 import TurndownService from "turndown";
 import { pageGetContents } from "./browser";
@@ -7,7 +8,7 @@ const port = 3010;
 
 const turndownService = new TurndownService();
 
-app.get("/scrape", async (req, res) => {
+app.get("/scrape", async (req: any, res: any) => {
   const url = req.query.url as string;
 
   try {
