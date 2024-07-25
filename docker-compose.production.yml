@@ -1,0 +1,10 @@
+services:
+  app:
+    restart: always
+    networks:
+      - ext_net
+
+networks:
+  ext_net:
+    name: svenson_platform_network
+    external: true

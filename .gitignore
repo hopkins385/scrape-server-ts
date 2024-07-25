@@ -1,0 +1,17 @@
+node_modules
+*.log*
+.nuxt
+.nitro
+.cache
+.output
+.env
+dist
+*.sqlite
+.DS_Store
+**/.DS_Store
+tests/e2e/reports*
+playwright*
+test-reports
+public/uploads
+uploads
+temp
