@@ -16,7 +16,7 @@ puppeteer.use(anonymize());
 export async function pageGetContents(url: string) {
   // Launch a new browser instance
   const browser = await puppeteer.launch({
-    executablePath: puppeteer.executablePath(),
+    // executablePath: puppeteer.executablePath(),
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
