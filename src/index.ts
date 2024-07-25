@@ -16,7 +16,7 @@ app.get("/scrape", async (req: any, res: any) => {
     const pageContentMarkdown = turndownService.turndown(pageContents);
     const removeEmptyLines = pageContentMarkdown.replace(/^\s*[\r\n]/gm, "");
     res.send({
-      markdown: removeEmptyLines,
+      body: removeEmptyLines,
     });
     //
   } catch (error) {
