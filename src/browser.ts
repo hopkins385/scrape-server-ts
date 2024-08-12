@@ -1,8 +1,10 @@
+import type { Page } from "puppeteer";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import AdblockerPlugin from "puppeteer-extra-plugin-adblocker";
 import blockResources from "puppeteer-extra-plugin-block-resources";
 import anonymize from "puppeteer-extra-plugin-anonymize-ua";
+import consola from "consola";
 
 puppeteer.use(StealthPlugin());
 puppeteer.use(AdblockerPlugin({ blockTrackers: true }));
@@ -13,6 +15,8 @@ puppeteer.use(
 );
 puppeteer.use(anonymize());
 
+const logger = consola.create({}).withTag("Browser");
+
 export async function pageGetContents(url: string) {
   // Launch a new browser instance
   const browser = await puppeteer.launch({
@@ -20,11 +24,11 @@ export async function pageGetContents(url: string) {
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-gpu",
-      "--incognito",
-      "--disable-client-side-phishing-detection",
-      "--disable-software-rasterizer",
+      // "--disable-dev-shm-usage",
+      // "--disable-gpu",
+      // "--incognito",
+      // "--disable-client-side-phishing-detection",
+      // "--disable-software-rasterizer",
     ],
   });
 
@@ -55,16 +59,19 @@ export async function pageGetContents(url: string) {
     }
   });
 
+  logger.info("Navigating to", url);
+
   // Navigate to the target URL
   await page.goto(url, {
-    waitUntil: "networkidle0",
+    // waitUntil: "networkidle0",
+    waitUntil: "networkidle2",
   });
 
   const isLoaded = await page.evaluate(() => {
     return document.readyState === "complete";
   });
   if (!isLoaded) {
-    console.log("Page did not fully load");
+    logger.error("Page did not fully load");
     // You might want to retry or handle this case
     throw new Error("Page did not fully load");
   }
@@ -76,6 +83,8 @@ export async function pageGetContents(url: string) {
   const bodySelector = "body";
 
   await page.waitForSelector(bodySelector);
+
+  const meta = await getMetaInfo(page);
 
   // remove unwanted elements
   const re = await page.evaluate(() => {
@@ -153,5 +162,44 @@ export async function pageGetContents(url: string) {
 
   await browser.close();
 
-  return bodyHtml;
+  return { meta, bodyHtml };
+}
+
+async function getMetaInfo(page: Page) {
+  const meta: { [key: string]: string | null } = {};
+  const metaTags = await page.$$("meta");
+  for (const tag of metaTags) {
+    const name = await tag.evaluate((node) => node.getAttribute("name"));
+    const property = await tag.evaluate((node) =>
+      node.getAttribute("property")
+    );
+    const content = await tag.evaluate((node) => node.getAttribute("content"));
+
+    if (name) {
+      meta[name] = content;
+    } else if (property) {
+      meta[property] = content;
+    }
+  }
+
+  // filter and keep only the meta tags we want
+  const allowedMetaTags = [
+    "title",
+    "description",
+    "keywords",
+    "og:title",
+    "og:description",
+    "og:site_name",
+    "og:type",
+    "og:locale",
+  ];
+
+  const filteredMeta = Object.keys(meta)
+    .filter((key) => allowedMetaTags.includes(key))
+    .reduce((obj: { [key: string]: string | null }, key) => {
+      obj[key] = meta[key];
+      return obj;
+    }, {} as { [key: string]: string | null });
+
+  return filteredMeta;
 }

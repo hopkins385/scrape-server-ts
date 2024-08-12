@@ -1,5 +1,5 @@
 // @ts-nocheck
-import express, { raw } from "express";
+import express from "express";
 import TurndownService from "turndown";
 import { pageGetContents } from "./browser";
 
@@ -9,13 +9,20 @@ const port = 3010;
 const turndownService = new TurndownService();
 
 app.get("/scrape", async (req: any, res: any) => {
+  console.log("Scraping page...");
   const url = req.query.url as string;
+  const charLimit = 10000;
 
   try {
-    const pageContents = await pageGetContents(url);
-    const pageContentMarkdown = turndownService.turndown(pageContents);
+    const { meta, bodyHtml } = await pageGetContents(url);
+    let pageContentMarkdown = turndownService.turndown(bodyHtml);
+    if (pageContentMarkdown.length > charLimit) {
+      pageContentMarkdown = pageContentMarkdown.substring(0, charLimit);
+    }
     const removeEmptyLines = pageContentMarkdown.replace(/^\s*[\r\n]/gm, "");
+
     res.send({
+      meta,
       body: removeEmptyLines,
     });
     //
