@@ -6,5 +6,5 @@ services:
 
 networks:
   ext_net:
-    name: svenson_platform_network
+    name: ragna_network
     external: true
