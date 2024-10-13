@@ -1,7 +1,7 @@
 // @ts-nocheck
 import express from "express";
 import TurndownService from "turndown";
-import { pageGetContents } from "./browser";
+import { getPageContents } from "./browser";
 
 const app = express();
 const port = 3010;
@@ -14,7 +14,7 @@ app.get("/scrape", async (req: any, res: any) => {
   const charLimit = 10000;
 
   try {
-    const { meta, bodyHtml } = await pageGetContents(url);
+    const { meta, bodyHtml } = await getPageContents(url);
     let pageContentMarkdown = turndownService.turndown(bodyHtml);
     if (pageContentMarkdown.length > charLimit) {
       pageContentMarkdown = pageContentMarkdown.substring(0, charLimit);

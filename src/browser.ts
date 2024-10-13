@@ -17,7 +17,7 @@ puppeteer.use(anonymize());
 
 const logger = consola.create({}).withTag("Browser");
 
-export async function pageGetContents(url: string) {
+export async function getPageContents(url: string) {
   // Launch a new browser instance
   const browser = await puppeteer.launch({
     // executablePath: puppeteer.executablePath(),
@@ -39,16 +39,19 @@ export async function pageGetContents(url: string) {
   await page.setRequestInterception(true);
   page.on("request", (interceptedRequest) => {
     if (interceptedRequest.isInterceptResolutionHandled()) return;
-    if (
-      interceptedRequest.resourceType() === "script" ||
-      interceptedRequest.resourceType() === "xhr" ||
-      interceptedRequest.resourceType() === "fetch"
-    ) {
-      interceptedRequest.continue();
-    } else if (interceptedRequest.resourceType() !== "document") {
-      interceptedRequest.abort();
-    } else {
-      interceptedRequest.continue();
+
+    switch (interceptedRequest.resourceType()) {
+      case "script":
+      case "xhr":
+      case "fetch":
+        interceptedRequest.continue();
+        break;
+      case "document":
+        interceptedRequest.continue();
+        break;
+      default:
+        interceptedRequest.abort();
+        break;
     }
   });
 
@@ -61,11 +64,15 @@ export async function pageGetContents(url: string) {
 
   logger.info("Navigating to", url);
 
-  // Navigate to the target URL
-  await page.goto(url, {
-    // waitUntil: "networkidle0",
-    waitUntil: "networkidle2",
-  });
+  try {
+    // Navigate to the target URL
+    await page.goto(url, {
+      waitUntil: "networkidle0",
+    });
+  } catch (error) {
+    logger.error("Error navigating to", url);
+    throw new Error("Error navigating to" + url);
+  }
 
   const isLoaded = await page.evaluate(() => {
     return document.readyState === "complete";
@@ -76,13 +83,19 @@ export async function pageGetContents(url: string) {
     throw new Error("Page did not fully load");
   }
 
+  logger.info("Page loaded");
+
   page.on("dialog", async (dialog) => {
     await dialog.accept();
   });
 
   const bodySelector = "body";
 
-  await page.waitForSelector(bodySelector);
+  await page.waitForSelector(bodySelector, {
+    timeout: 30000,
+  });
+
+  logger.info("Body selector found");
 
   const meta = await getMetaInfo(page);
 
@@ -161,6 +174,8 @@ export async function pageGetContents(url: string) {
   });
 
   await browser.close();
+
+  logger.info("Browser closed");
 
   return { meta, bodyHtml };
 }

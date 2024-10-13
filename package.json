@@ -13,10 +13,10 @@
   "description": "",
   "dependencies": {
     "@devmehq/email-validator-js": "^1.0.19",
-    "axios": "^1.7.2",
+    "axios": "^1.7.7",
     "consola": "^3.2.3",
-    "express": "^4.19.2",
-    "puppeteer": "^22.13.0",
+    "express": "^5.0.1",
+    "puppeteer": "^23.5.3",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-adblocker": "^2.13.6",
     "puppeteer-extra-plugin-anonymize-ua": "^2.4.6",
@@ -25,12 +25,12 @@
     "turndown": "^7.2.0"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21",
-    "@types/node": "^20.14.12",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.7.5",
     "@types/puppeteer": "^7.0.4",
     "@types/turndown": "^5.0.5",
-    "nodemon": "^3.1.4",
-    "tsx": "^4.16.2",
-    "typescript": "^5.5.4"
+    "nodemon": "^3.1.7",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
   }
 }
