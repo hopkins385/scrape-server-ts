@@ -2,6 +2,7 @@ name: scrape_server
 
 services:
   app:
+    container_name: scrape_server
     build:
       context: .
       dockerfile: Dockerfile
