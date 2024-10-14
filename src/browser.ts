@@ -5,6 +5,7 @@ import AdblockerPlugin from "puppeteer-extra-plugin-adblocker";
 import blockResources from "puppeteer-extra-plugin-block-resources";
 import anonymize from "puppeteer-extra-plugin-anonymize-ua";
 import consola from "consola";
+import { config } from "./config";
 
 puppeteer.use(StealthPlugin());
 puppeteer.use(AdblockerPlugin({ blockTrackers: true }));
@@ -15,7 +16,14 @@ puppeteer.use(
 );
 puppeteer.use(anonymize());
 
-const logger = consola.create({}).withTag("Browser");
+const logger = consola
+  .create({
+    level: config.debug ? 5 : 3,
+  })
+  .withTag("Browser");
+
+const defaultTimeout: number = config.browser.timeout * 1000;
+const defaultBodyLoadTimeout: number = config.browser.bodyLoadTimeout * 1000;
 
 export async function getPageContents(url: string) {
   // Launch a new browser instance
@@ -33,7 +41,7 @@ export async function getPageContents(url: string) {
   });
 
   const page = await browser.newPage();
-  page.setDefaultNavigationTimeout(120000); // 2 minutes
+  page.setDefaultNavigationTimeout(defaultTimeout);
   await page.setViewport({ width: 800, height: 600 });
 
   await page.setRequestInterception(true);
@@ -67,7 +75,7 @@ export async function getPageContents(url: string) {
   try {
     // Navigate to the target URL
     await page.goto(url, {
-      waitUntil: "networkidle0",
+      waitUntil: "networkidle2",
     });
   } catch (error) {
     logger.error("Error navigating to", url);
@@ -92,7 +100,7 @@ export async function getPageContents(url: string) {
   const bodySelector = "body";
 
   await page.waitForSelector(bodySelector, {
-    timeout: 30000,
+    timeout: defaultBodyLoadTimeout,
   });
 
   logger.info("Body selector found");

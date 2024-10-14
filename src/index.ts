@@ -2,14 +2,21 @@
 import express from "express";
 import TurndownService from "turndown";
 import { getPageContents } from "./browser";
+import { config } from "./config";
+import consola from "consola";
+
+const logger = consola
+  .create({
+    level: config.debug ? 5 : 3,
+  })
+  .withTag("Api");
 
 const app = express();
-const port = 3010;
 
 const turndownService = new TurndownService();
 
 app.get("/scrape", async (req: any, res: any) => {
-  console.log("Scraping page...");
+  logger.info("Scraping page...");
   const url = req.query.url as string;
   const charLimit = 10000;
 
@@ -27,11 +34,11 @@ app.get("/scrape", async (req: any, res: any) => {
     });
     //
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     res.status(500).send("An error occurred while scraping the page");
   }
 });
 
-app.listen(port, () => {
-  console.log(`Scraping API is listening at http://localhost:${port}`);
+app.listen(config.port, () => {
+  console.log(`Scraping API is listening at http://localhost:${config.port}`);
 });
