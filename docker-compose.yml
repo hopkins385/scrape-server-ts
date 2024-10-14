@@ -1,8 +1,13 @@
+name: scrape_server
+
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: scrape_server
     working_dir: /app
     restart: always
+    env_file:
+      - .env
+    security_opt:
+      - no-new-privileges:true
