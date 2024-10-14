@@ -1,4 +1,4 @@
-name: scrape_server1
+name: scrape_server
 
 services:
   app:
