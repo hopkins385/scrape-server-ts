@@ -75,14 +75,14 @@ export async function getPageContents(url: string) {
   try {
     // Navigate to the target URL
     await page.goto(url, {
-      waitUntil: ["networkidle2"], // "domcontentloaded",
+      waitUntil: ["domcontentloaded", "networkidle2"], // "domcontentloaded",
     });
   } catch (error) {
     logger.error("Error navigating to", url);
     throw new Error("Error navigating to" + url);
   }
 
-  const isLoaded = await page.evaluate(() => {
+  /*const isLoaded = await page.evaluate(() => {
     return document.readyState === "complete";
   });
   if (!isLoaded) {
@@ -92,6 +92,7 @@ export async function getPageContents(url: string) {
   }
 
   logger.info("Page loaded");
+  */
 
   page.on("dialog", async (dialog) => {
     await dialog.accept();
