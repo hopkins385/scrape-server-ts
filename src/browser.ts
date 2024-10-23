@@ -75,7 +75,7 @@ export async function getPageContents(url: string) {
   try {
     // Navigate to the target URL
     await page.goto(url, {
-      waitUntil: ["domcontentloaded", "networkidle2"],
+      waitUntil: ["networkidle2"], // "domcontentloaded",
     });
   } catch (error) {
     logger.error("Error navigating to", url);
