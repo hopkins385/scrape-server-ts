@@ -2,9 +2,9 @@ services:
   app:
     restart: always
     networks:
-      - ext_net
+      - ragna_net
 
 networks:
-  ext_net:
-    name: ragna_network
+  ragna_net:
+    name: ragna-studio-backend-network
     external: true
