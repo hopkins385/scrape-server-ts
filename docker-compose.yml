@@ -13,3 +13,5 @@ services:
       - .env
     security_opt:
       - no-new-privileges:true
+    cpus: 2
+    mem_limit: 512m
