@@ -4,6 +4,7 @@ import TurndownService from "turndown";
 import { getPageContents } from "./browser";
 import { config } from "./config";
 import consola from "consola";
+import { bodySchema } from "./validation";
 
 const logger = consola
   .create({
@@ -17,7 +18,17 @@ const turndownService = new TurndownService();
 
 app.get("/scrape", async (req: any, res: any) => {
   logger.info("Scraping page...");
-  const url = req.query.url as string;
+  const validation = bodySchema.safeParse(req.query);
+  if (!validation.success) {
+    logger.error("Validation error:", validation.error);
+    return res.status(400).send("Invalid URL");
+  }
+  const { url } = validation.data;
+  logger.info("URL:", url);
+  if (!url) {
+    logger.error("URL is required");
+    return res.status(400).send("URL is required");
+  }
   const charLimit = 10000;
 
   try {
@@ -43,10 +54,10 @@ const server = app.listen(config.port, () => {
   console.log(`Scraping API is listening at http://localhost:${config.port}`);
 });
 
-server.setTimeout(config.server.timeout * 1000);
-server.on("timeout", () => {
-  logger.warn("Server timeout");
-});
+// server.setTimeout(config.server.timeout * 1000);
+// server.on("timeout", () => {
+//   logger.warn("Server timeout");
+// });
 server.on("error", (error) => {
   logger.error("Server error:", error);
 });

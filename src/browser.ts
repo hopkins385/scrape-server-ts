@@ -80,7 +80,6 @@ export async function getPageContents(url: string) {
         waitUntil: ["domcontentloaded", "networkidle2"],
       });
     } catch (e) {
-      logger.error(`Error navigating to ${url}:`, e);
       throw new Error(
         `Navigation failed for ${url}: ${
           e instanceof Error ? e.message : String(e)
@@ -188,14 +187,14 @@ export async function getPageContents(url: string) {
     });
 
     // Successfully completed operations, close browser before returning
-    if (browser && browser.isConnected()) {
+    if (browser && browser.connected) {
       await browser.close();
       logger.info("Browser closed on successful completion.");
     }
 
     return { meta, bodyHtml };
   } catch (error) {
-    logger.error(`Error in getPageContents for url "${url}":`, error);
+    // logger.error(`Error in getPageContents for url "${url}":`, error);
     // The finally block will attempt to close the browser.
     // Re-throw a new error to signal failure to the caller.
     throw new Error(
@@ -204,15 +203,15 @@ export async function getPageContents(url: string) {
       }`
     );
   } finally {
-    if (browser && browser.isConnected()) {
-      logger.info("Ensuring browser is closed in finally block...");
+    if (browser && browser.connected) {
       try {
         await browser.close();
         logger.info("Browser closed in finally block.");
       } catch (closeError) {
-        logger.error("Error closing browser in finally block:", closeError);
+        // logger.error("Error closing browser in finally block:", closeError);
         // Optionally, re-throw or handle this specific error,
         // but the original error from the try/catch block is usually more critical.
+        throw closeError;
       }
     }
   }
