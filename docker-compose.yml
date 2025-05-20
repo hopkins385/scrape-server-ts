@@ -8,6 +8,7 @@ services:
       dockerfile: Dockerfile
     working_dir: /app
     restart: always
+    init: true
     env_file:
       - .env
     security_opt:

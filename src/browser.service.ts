@@ -39,8 +39,8 @@ export class BrowserService {
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
-          // "--disable-dev-shm-usage",
-          // "--disable-gpu",
+          "--disable-dev-shm-usage", // Uncommented this line
+          "--disable-gpu", // Uncommented this line
           // "--incognito",
           // "--disable-client-side-phishing-detection",
           // "--disable-software-rasterizer",
