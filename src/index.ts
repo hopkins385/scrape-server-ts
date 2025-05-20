@@ -5,6 +5,7 @@ import { getPageContents } from "./browser";
 import { config } from "./config";
 import consola from "consola";
 import { bodySchema } from "./validation";
+import { BrowserService } from "./browser.service";
 
 const logger = consola
   .create({
@@ -15,6 +16,7 @@ const logger = consola
 const app = express();
 
 const turndownService = new TurndownService();
+let browserService: BrowserService | null = null;
 
 app.get("/scrape", async (req: any, res: any) => {
   logger.info("Scraping page...");
@@ -31,8 +33,10 @@ app.get("/scrape", async (req: any, res: any) => {
   }
   const charLimit = 10000;
 
+  browserService = new BrowserService();
+
   try {
-    const { meta, bodyHtml } = await getPageContents(url);
+    const { meta, bodyHtml } = await browserService.getPageContents(url);
     let pageContentMarkdown = turndownService.turndown(bodyHtml);
     if (pageContentMarkdown.length > charLimit) {
       pageContentMarkdown = pageContentMarkdown.substring(0, charLimit);
@@ -47,6 +51,11 @@ app.get("/scrape", async (req: any, res: any) => {
   } catch (error) {
     logger.error(error);
     res.status(500).send("An error occurred while scraping the page");
+  } finally {
+    if (browserService) {
+      browserService = null;
+      logger.info("Browser service cleaned up");
+    }
   }
 });
 
