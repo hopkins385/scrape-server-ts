@@ -1,4 +1,4 @@
-import type { Page } from "puppeteer";
+import type { Browser, Page } from "puppeteer";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import AdblockerPlugin from "puppeteer-extra-plugin-adblocker";
@@ -26,167 +26,196 @@ const defaultTimeout: number = config.browser.timeout * 1000;
 const defaultBodyLoadTimeout: number = config.browser.bodyLoadTimeout * 1000;
 
 export async function getPageContents(url: string) {
-  // Launch a new browser instance
-  const browser = await puppeteer.launch({
-    // executablePath: puppeteer.executablePath(),
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      // "--disable-dev-shm-usage",
-      // "--disable-gpu",
-      // "--incognito",
-      // "--disable-client-side-phishing-detection",
-      // "--disable-software-rasterizer",
-    ],
-  });
-
-  const page = await browser.newPage();
-  page.setDefaultNavigationTimeout(defaultTimeout);
-  await page.setViewport({ width: 800, height: 600 });
-
-  await page.setRequestInterception(true);
-  page.on("request", (interceptedRequest) => {
-    if (interceptedRequest.isInterceptResolutionHandled()) return;
-
-    switch (interceptedRequest.resourceType()) {
-      case "script":
-      case "xhr":
-      case "fetch":
-        interceptedRequest.continue();
-        break;
-      case "document":
-        interceptedRequest.continue();
-        break;
-      default:
-        interceptedRequest.abort();
-        break;
-    }
-  });
-
-  browser.on("targetcreated", async (target) => {
-    const page = await target.page();
-    if (page && target.type() === "page") {
-      await page.close();
-    }
-  });
-
-  logger.info("Navigating to", url);
-
+  let browser: Browser | undefined;
   try {
-    // Navigate to the target URL
-    await page.goto(url, {
-      waitUntil: ["domcontentloaded", "networkidle2"], // "domcontentloaded",
+    // Launch a new browser instance
+    browser = await puppeteer.launch({
+      // executablePath: puppeteer.executablePath(),
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        // "--disable-dev-shm-usage",
+        // "--disable-gpu",
+        // "--incognito",
+        // "--disable-client-side-phishing-detection",
+        // "--disable-software-rasterizer",
+      ],
     });
-  } catch (error) {
-    logger.error("Error navigating to", url);
-    throw new Error("Error navigating to" + url);
-  }
 
-  /*const isLoaded = await page.evaluate(() => {
-    return document.readyState === "complete";
-  });
-  if (!isLoaded) {
-    logger.error("Page did not fully load");
-    // You might want to retry or handle this case
-    throw new Error("Page did not fully load");
-  }
+    const page = await browser.newPage();
+    page.setDefaultNavigationTimeout(defaultTimeout);
+    await page.setViewport({ width: 800, height: 600 });
 
-  logger.info("Page loaded");
-  */
+    await page.setRequestInterception(true);
+    page.on("request", (interceptedRequest) => {
+      if (interceptedRequest.isInterceptResolutionHandled()) return;
 
-  page.on("dialog", async (dialog) => {
-    await dialog.accept();
-  });
+      switch (interceptedRequest.resourceType()) {
+        case "script":
+        case "xhr":
+        case "fetch":
+          interceptedRequest.continue();
+          break;
+        case "document":
+          interceptedRequest.continue();
+          break;
+        default:
+          interceptedRequest.abort();
+          break;
+      }
+    });
 
-  const bodySelector = "body";
+    browser.on("targetcreated", async (target) => {
+      const pageTarget = await target.page();
+      if (pageTarget && target.type() === "page") {
+        await pageTarget.close();
+      }
+    });
 
-  await page.waitForSelector(bodySelector, {
-    timeout: defaultBodyLoadTimeout,
-  });
+    logger.info("Navigating to", url);
 
-  logger.info("Body selector found");
+    try {
+      // Navigate to the target URL
+      await page.goto(url, {
+        waitUntil: ["domcontentloaded", "networkidle2"],
+      });
+    } catch (e) {
+      logger.error(`Error navigating to ${url}:`, e);
+      throw new Error(
+        `Navigation failed for ${url}: ${
+          e instanceof Error ? e.message : String(e)
+        }`
+      );
+    }
 
-  const meta = await getMetaInfo(page);
+    const isLoaded = await page.evaluate(() => {
+      return document.readyState === "complete";
+    });
+    if (!isLoaded) {
+      throw new Error(
+        `Page ${url} did not load completely (document.readyState was not 'complete').`
+      );
+    }
 
-  // remove unwanted elements
-  const re = await page.evaluate(() => {
-    // Remove unwanted elements
-    const elements = document.querySelectorAll("body *");
+    logger.info("Page loaded");
 
-    for (const element of elements) {
-      const style = getComputedStyle(element);
+    page.on("dialog", async (dialog) => {
+      await dialog.accept();
+    });
 
-      if (
-        style.position === "fixed" ||
-        style.position === "sticky" ||
-        style.position === "absolute"
-      ) {
-        if (element.clientHeight > 0 && element.clientWidth > 0) {
+    const bodySelector = "body";
+
+    await page.waitForSelector(bodySelector, {
+      timeout: defaultBodyLoadTimeout,
+    });
+
+    logger.info("Body selector found");
+
+    const meta = await getMetaInfo(page);
+
+    // remove unwanted elements
+    await page.evaluate(() => {
+      // Remove unwanted elements
+      const elements = document.querySelectorAll("body *");
+
+      for (const element of elements) {
+        const style = getComputedStyle(element);
+
+        if (
+          style.position === "fixed" ||
+          style.position === "sticky" ||
+          style.position === "absolute"
+        ) {
+          if (element.clientHeight > 0 && element.clientWidth > 0) {
+            element.remove();
+          }
+        }
+
+        // script
+        if (element.matches("script")) {
+          element.remove();
+        }
+
+        if (element.matches("footer, .footer, #footer")) {
+          element.remove();
+        }
+
+        if (element.matches("header, .header, #header")) {
+          element.remove();
+        }
+
+        if (element.matches("nav, .nav, #nav")) {
+          element.remove();
+        }
+
+        if (element.matches("banner, .banner, #banner")) {
+          element.remove();
+        }
+
+        if (element.matches("aside, .aside, #aside")) {
+          element.remove();
+        }
+
+        if (element.matches("sidebar, .sidebar, #sidebar")) {
+          element.remove();
+        }
+
+        // Remove iframes and other embedded elements
+        if (
+          element.matches("iframe, video, audio, object, embed") ||
+          element.tagName.toLowerCase() === "iframe"
+        ) {
           element.remove();
         }
       }
+    });
 
-      // script
-      if (element.matches("script")) {
-        element.remove();
-      }
+    // etract html for markdown conversion
+    const bodyHtml = await page.$eval(bodySelector, (body) => {
+      // Check for custom elements with content attribute
+      const customElements = body.querySelectorAll("[content]");
+      customElements.forEach((element) => {
+        element.innerHTML = element.getAttribute("content") ?? "";
+      });
 
-      if (element.matches("footer, .footer, #footer")) {
-        element.remove();
-      }
+      // check for custom elements with text attribute
+      const textElements = body.querySelectorAll("[text]");
+      textElements.forEach((element) => {
+        element.innerHTML = element.getAttribute("text") ?? "";
+      });
 
-      if (element.matches("header, .header, #header")) {
-        element.remove();
-      }
+      return body.innerHTML;
+    });
 
-      if (element.matches("nav, .nav, #nav")) {
-        element.remove();
-      }
+    // Successfully completed operations, close browser before returning
+    if (browser && browser.isConnected()) {
+      await browser.close();
+      logger.info("Browser closed on successful completion.");
+    }
 
-      if (element.matches("banner, .banner, #banner")) {
-        element.remove();
-      }
-
-      if (element.matches("aside, .aside, #aside")) {
-        element.remove();
-      }
-
-      if (element.matches("sidebar, .sidebar, #sidebar")) {
-        element.remove();
-      }
-
-      // Remove iframes and other embedded elements
-      if (
-        element.matches("iframe, video, audio, object, embed") ||
-        element.tagName.toLowerCase() === "iframe"
-      ) {
-        element.remove();
+    return { meta, bodyHtml };
+  } catch (error) {
+    logger.error(`Error in getPageContents for url "${url}":`, error);
+    // The finally block will attempt to close the browser.
+    // Re-throw a new error to signal failure to the caller.
+    throw new Error(
+      `Failed to get page contents for ${url}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  } finally {
+    if (browser && browser.isConnected()) {
+      logger.info("Ensuring browser is closed in finally block...");
+      try {
+        await browser.close();
+        logger.info("Browser closed in finally block.");
+      } catch (closeError) {
+        logger.error("Error closing browser in finally block:", closeError);
+        // Optionally, re-throw or handle this specific error,
+        // but the original error from the try/catch block is usually more critical.
       }
     }
-  });
-
-  // etract html for markdown conversion
-  const bodyHtml = await page.$eval(bodySelector, (body) => {
-    // Check for custom elements with content attribute
-    const customElements = body.querySelectorAll("[content]");
-    customElements.forEach((element) => {
-      element.innerHTML = element.getAttribute("content") ?? "";
-    });
-
-    // check for custom elements with text attribute
-    const textElements = body.querySelectorAll("[text]");
-    textElements.forEach((element) => {
-      element.innerHTML = element.getAttribute("text") ?? "";
-    });
-
-    return body.innerHTML;
-  });
-
-  await browser.close();
-
-  logger.info("Browser closed");
-
-  return { meta, bodyHtml };
+  }
 }
 
 async function getMetaInfo(page: Page) {

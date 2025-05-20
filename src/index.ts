@@ -39,6 +39,17 @@ app.get("/scrape", async (req: any, res: any) => {
   }
 });
 
-app.listen(config.port, () => {
+const server = app.listen(config.port, () => {
   console.log(`Scraping API is listening at http://localhost:${config.port}`);
+});
+
+server.setTimeout(config.server.timeout * 1000);
+server.on("timeout", () => {
+  logger.warn("Server timeout");
+});
+server.on("error", (error) => {
+  logger.error("Server error:", error);
+});
+server.on("close", () => {
+  logger.info("Server closed");
 });
