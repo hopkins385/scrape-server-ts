@@ -16,7 +16,7 @@
     "api"
   ],
   "author": "Sven Stadhouders",
-  "license": "MIT",
+  "license": "AGPL-3.0",
   "description": "A TypeScript-based web scraping API server that converts web pages to markdown",
   "dependencies": {
     "@devmehq/email-validator-js": "^2.0.1",
